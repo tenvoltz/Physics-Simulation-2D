@@ -13,17 +13,30 @@ function setup(){
 
   objects = [];
   manifolds = [];
+  /*
   objects.push(new Rectangle(new Vector(-500,canvas.height/2), new Vector(1000,canvas.height), 0, materials.steel));
   objects.push(new Rectangle(new Vector(canvas.width+500,canvas.height/2), new Vector(1000,canvas.height), 0, materials.steel));
   objects.push(new Rectangle(new Vector(canvas.width/2,-490), new Vector(canvas.width,1000), 0, materials.ice));
+  */
   /*
   objects.push(new Rectangle(new Vector(80,40), new Vector(50,50), 1, materials.steel));
   objects.push(new Rectangle(new Vector(400,40), new Vector(50,50), 100, materials.steel));
   objects[4].velocity = new Vector(-30,0);
   */
 
-  objects.push(new Circle(new Vector(500,35), 50, 10, materials.ice));
-  objects.push(new Circle(new Vector(501,300), 50, 10, materials.ice));
+  objects.push(new RigidBody({shape : new Circle({radius : 50}), 
+                              kinematic : new Kinematic({center : new Vector(501,60)}),
+                              material : new Material({density: 0.01})
+              }));
+  objects.push(new RigidBody({shape : new Circle({radius : 50}), 
+                              kinematic : new Kinematic({center : new Vector(500,300)}),
+                              material : materials.ice
+              }));
+  objects.push(new RigidBody({shape : new Circle({radius : 100000}), 
+                              kinematic : new Kinematic({center : new Vector(500,-99990), mass : 0}),
+                              material : materials.staticGlass
+              }));      
+
   /*
   for(let i = 0; i < 100; i++){
     if(Math.random() < 0.5){
@@ -53,12 +66,16 @@ function setup(){
   ctx.translate(0, canvas.height); 
   ctx.scale(1, -1);
   
+  render();
+  advance(speed/fps);
+  broadPhase();
+  narrowPhase();
   setInterval(simulate, 1000/fps);
 }
 
 let currentTime = Date.now();
 let quit = false;
-let fps = 100;
+let fps = 60;
 let speed = 10;
 
 function simulate(){
@@ -87,9 +104,10 @@ function simulate(){
 }
 
 function broadPhase(){
+  manifolds = [];
   for(let i = 0; i < objects.length-1; i++){
     for(let j = i+1; j < objects.length; j++){
-      if(objects[i].aabb.intersect(objects[j].aabb)){
+      if(objects[i].shape.aabb.intersect(objects[j].shape.aabb)){
         manifolds.push(new Manifold(undefined, undefined, objects[i], objects[j]));
       }
     }
@@ -109,7 +127,7 @@ function narrowPhase(){
 
 function advance(dt){
   for(let i = 0; i < objects.length; i++){
-    objects[i].move(dt);
+    objects[i].kinematic.move(objects[i],dt);
   }
 }
 
@@ -120,8 +138,9 @@ function render(){
 
   ctx.save();
   for(let i = 0; i < objects.length; i++){
-    objects[i].draw(ctx);
-    //objects[i].velocity.draw(objects[i].center, ctx);
+    objects[i].shape.draw(objects[i], ctx);
+    //objects[i].shape.aabb.draw(objects[i].shape.id, ctx);
+    //objects[i].kinematic.velocity.draw(objects[i].kinematic.center, ctx);
   }
   ctx.restore();
 }

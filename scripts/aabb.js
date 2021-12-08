@@ -25,15 +25,6 @@ AABB.prototype.intersect = function(other){
     return false;
   return true;
 };
-AABB.generate = function(){
-  if(this instanceof Circle){
-    let min = new Vector(this.center.x - this.radius, this.center.y - this.radius);
-    let max = new Vector(this.center.x + this.radius, this.center.y + this.radius);
-    return new AABB(min, max);
-  }
-  if(this instanceof Rectangle){
-    let min = new Vector(this.center.x - this.dimension.x*0.5, this.center.y - this.dimension.y*0.5);
-    let max = new Vector(this.center.x + this.dimension.x*0.5, this.center.y + this.dimension.y*0.5);
-    return new AABB(min, max);
-  }
+AABB.prototype.getDimension = function(){
+  return this.max.subtract(this.min);
 }
