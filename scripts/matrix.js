@@ -43,7 +43,6 @@ Matrix.rotation = function(angle){
   sin = Math.sin(angle);
   rotation = new Matrix(new Vector(cos, -sin), 
                         new Vector(sin,  cos));
-  if(angle < 0) rotation = rotation.transpose();
   return rotation;
 }
 Vector.prototype.rotate = function(angle){

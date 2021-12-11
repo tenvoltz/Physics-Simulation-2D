@@ -10,93 +10,81 @@ function setup(){
   canvas = document.getElementById('Playground');
   canvas.style.background = "white";
   ctx = canvas.getContext('2d');
+  ctx.translate(0, canvas.height); 
+  ctx.scale(1, -1);
 
   objects = [];
   manifolds = [];
-  /*
-  objects.push(new Rectangle(new Vector(-500,canvas.height/2), new Vector(1000,canvas.height), 0, materials.steel));
-  objects.push(new Rectangle(new Vector(canvas.width+500,canvas.height/2), new Vector(1000,canvas.height), 0, materials.steel));
-  objects.push(new Rectangle(new Vector(canvas.width/2,-490), new Vector(canvas.width,1000), 0, materials.ice));
-  */
-  /*
-  objects.push(new Rectangle(new Vector(80,40), new Vector(50,50), 1, materials.steel));
-  objects.push(new Rectangle(new Vector(400,40), new Vector(50,50), 100, materials.steel));
-  objects[4].velocity = new Vector(-30,0);
-  */
 
+  objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(-100, 0),
+                                                              new Vector(20, 0),
+                                                              new Vector(20, canvas.height),
+                                                              new Vector(-100, canvas.height)]}), 
+                              material : materials.staticIce
+              }));//Left Wall
+  objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(canvas.width - 20, 0),
+                                                              new Vector(canvas.width+100, 0),
+                                                              new Vector(canvas.width+100, canvas.height),
+                                                              new Vector(canvas.width - 20, canvas.height)]}), 
+                              material : materials.staticIce
+              }));//Right Wall
+  objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(0,-100),
+                                                              new Vector(0, 10),
+                                                              new Vector(canvas.width, -100),
+                                                              new Vector(canvas.width, 10)]}), 
+                              material : materials.staticWood
+              }));//Bottom Wall    
   objects.push(new RigidBody({shape : new Circle({radius : 50}), 
-                              kinematic : new Kinematic({center : new Vector(501,60)}),
-                              material : new Material({density: 0.01})
-              }));
-  objects.push(new RigidBody({shape : new Circle({radius : 50}), 
-                              kinematic : new Kinematic({center : new Vector(500,300)}),
+                              kinematic : new Kinematic({center : new Vector(500,60)}),
                               material : materials.ice
               }));
-  objects.push(new RigidBody({shape : new Circle({radius : 100000}), 
-                              kinematic : new Kinematic({center : new Vector(500,-99990), mass : 0}),
-                              material : materials.staticGlass
-              }));      
-
-  /*
-  for(let i = 0; i < 100; i++){
-    if(Math.random() < 0.5){
+  objects.push(new RigidBody({shape : new Circle({radius : 50}), 
+                              kinematic : new Kinematic({center : new Vector(501,300)}),
+                              material : materials.ice
+              }));
+  objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(100,20),
+                                                              new Vector(300, 30),
+                                                              new Vector(100, 100),
+                                                              new Vector(330, 91)]}), 
+                              material : materials.ice
+              }));
+  objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(100, 220),
+                                                              new Vector(200, 200),
+                                                              new Vector(100, 300),
+                                                              new Vector(230, 295)]}), 
+                              material : materials.ice
+              }));
+  for(let i = 0; i < 10; i++){
+    if(Math.random() < 1){
       let center = new Vector(Math.random()*canvas.width, Math.random()*canvas.height);
-      let dimension = new Vector(Math.random()*20+20,Math.random()*20+20);
-      objects.push(new Rectangle(center, dimension, 1, materials.glass));
-      objects.push(new Rectangle(center, dimension, 1, materials.glass));
+      let vertices = [];
+      for(let j = Math.floor(Math.random()*5) + 3; j >= 0; j--){
+        let angle = Math.random()*2*Math.PI;
+        let radius = 70;
+        vertices.push(center.add((new Vector(Math.cos(angle), Math.sin(angle))).scale(radius)));
+      }
+      objects.push(new RigidBody({shape: new Polygon({vertices : vertices}), 
+                                  material : materials.ice
+              }));
     }
     else{
       let center = new Vector(Math.random()*canvas.width, Math.random()*canvas.height);
       let radius = Math.random()*20+20;
-      objects.push(new Circle(center, radius, 1, materials.glass));
-      objects.push(new Circle(center, radius, 1, materials.glass));
+      objects.push(new RigidBody({shape: new Circle({radius: radius}),
+                                  kinematic: new Kinematic({center: center}),
+                                  material: materials.glass}));
     }
   }
-  */
-  /*
-  for(let i = 0; i < 60; i++){
-    for(let j = 0; j < 20; j++){
-      let radius = 5;
-      let center = new Vector(100+radius/2 + 2*radius*j, 30+radius/2 + 2*radius*i);
-      objects.push(new Circle(center, radius, 1, new Material(1, 1, 0, 0)));
-    }
-  }
-  objects.push(new Circle(new Vector(500,300), 50, 100, materials.ice));
-  */
-  ctx.translate(0, canvas.height); 
-  ctx.scale(1, -1);
-  
-  render();
-  advance(speed/fps);
-  broadPhase();
-  narrowPhase();
+
   setInterval(simulate, 1000/fps);
 }
 
 let currentTime = Date.now();
 let quit = false;
 let fps = 60;
-let speed = 10;
+let speed = 5;
 
 function simulate(){
-  /*
-    let newTime = Date.now();
-    let frameTime = newTime - currentTime;
-    currentTime = newTime;
-
-    if(frameTime > 1000) frameTime = 1000;
-
-    let deltaTime = 1;
-    while(frameTime > 0){
-      deltaTime = Math.min(frameTime, timeStep);
-      
-      advance(deltaTime/1000);
-      broadPhase();
-      narrowPhase();
-
-      frameTime -= deltaTime;
-    }
-  */
   render();
   advance(speed/fps);
   broadPhase();
@@ -119,9 +107,10 @@ function narrowPhase(){
     if(manifolds[j].intersect()){
       manifolds[j].resolve();
       manifolds[j].correctPosition();
-      //manifolds[j].contacts[0].normal.scale(20).draw(manifolds[j].contacts[0].position, ctx);
-      manifolds.pop();
-    }  
+      //manifolds[j].contacts[0].normal.scale(20).draw(ctx, manifolds[j].contacts[0].position);
+      //if(manifolds[j].count == 2) manifolds[j].contacts[1].normal.scale(20).draw(ctx, manifolds[j].contacts[1].position);
+    }
+    manifolds.pop();  
   }
 }
 
@@ -133,8 +122,7 @@ function advance(dt){
 
 function render(){
   ctx.globalCompositeOperation = 'destination-over';
-  ctx.clearRect(0, 0, canvas.width, canvas.height); 
-  // clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height); //clear canvas
 
   ctx.save();
   for(let i = 0; i < objects.length; i++){

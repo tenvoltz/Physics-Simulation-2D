@@ -11,7 +11,12 @@ Vector.prototype.negate = function(){
     return new Vector(-this.x,  -this.y);
 };
 Vector.prototype.perpendicular = function(){
+    //rotate right ; but turn left under current ctx
     return new Vector(this.y, -this.x);
+};
+Vector.prototype.perpendicular2 = function(){
+    //rotate left ; but turn right under current ctx
+    return new Vector(-this.y, this.x);
 };
 Vector.prototype.add = function(other){
     return new Vector(
@@ -44,6 +49,14 @@ Vector.prototype.dot = function(other){
 Vector.prototype.cross = function(other){
     return this.x * other.y - this.y * other.x;
 };
+Vector.prototype.crossScalar = function(scalar){
+    //vector cross scalar
+    return new Vector(scalar * this.y, -scalar * this.x);
+};
+Vector.prototype.scalarCross = function(scalar){
+    //scalar cross vector
+    return new Vector(-scalar * this.y, scalar * this.x);
+};
 Vector.prototype.equals = function(other){
     return this.x == other.x && this.y == other.y;
 };
@@ -68,7 +81,7 @@ Vector.prototype.setComponent = function(x,y){
     this.y = y;
 };
 
-Vector.prototype.draw = function(origin = new Vector(0,0), ctx, lineWidth = 2, strokeStyle = 'black'){
+Vector.prototype.draw = function(ctx, origin = new Vector(0,0), lineWidth = 2, strokeStyle = 'black'){
     ctx.beginPath();
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
