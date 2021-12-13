@@ -81,10 +81,11 @@ Vector.prototype.setComponent = function(x,y){
     this.y = y;
 };
 
-Vector.prototype.draw = function(ctx, origin = new Vector(0,0), lineWidth = 2, strokeStyle = 'black'){
+Vector.prototype.draw = function(ctx, origin = new Vector(0,0), style = 'black', lineWidth = 2){
     ctx.beginPath();
     ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = strokeStyle;
+    ctx.strokeStyle = style;
+    ctx.fillStyle = style;
     ctx.moveTo(origin.x, origin.y);
     ctx.lineTo(origin.x + this.x, origin.y + this.y);
     ctx.stroke();

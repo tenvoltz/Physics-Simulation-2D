@@ -17,26 +17,6 @@ function Kinematic(args) {
   this.force = args.force !== undefined ? args.force : new Vector(0, 0);
   this.torque = args.torque !== undefined ? args.torque : 0;
 }
-function Material(args) {
-  this.density = args.density !== undefined ? args.density : 0.001; // g/cm^3
-  this.restitution = args.restitution !== undefined ? Math.sqrt(args.restitution) : 1;
-  this.kineticCoeffriction = args.kineticCoeffriction !== undefined ? args.kineticCoeffriction : 0.2;
-  this.staticCoeffriction = args.staticCoeffriction !== undefined ? args.staticCoeffriction : 0.5;
-}
-function Shape() {
-  this.id = uniqueID();
-}
-function Circle(args) {
-  Shape.call(this);
-  this.radius = args.radius !== undefined ? args.radius : 1;
-}
-function Polygon(args) {
-  Shape.call(this);
-  this.vertices = args.vertices !== undefined ? args.vertices : [Vector.unitRandom(), Vector.unitRandom(), Vector.unitRandom()];
-
-  this.sortVertices();
-  this.calculateNormal();
-}
 Kinematic.prototype.calculateMass = function (rigidBody) {
   this.mass = rigidBody.material.density * rigidBody.shape.area;
   this.massInverse = this.mass !== 0 ? 1 / this.mass : 0;
@@ -103,6 +83,19 @@ Kinematic.prototype.applyCorrection = function (rigidBody, correction, centerToC
   this.center = this.center.add(centerTranslate);
   this.angularPosition = this.angularPosition + centerRotate;
 };
+function Material(args) {
+  this.density = args.density !== undefined ? args.density : 0.5; // g/cm^3
+  this.restitution = args.restitution !== undefined ? Math.sqrt(args.restitution) : 1;
+  this.kineticCoeffriction = args.kineticCoeffriction !== undefined ? args.kineticCoeffriction : 0.2;
+  this.staticCoeffriction = args.staticCoeffriction !== undefined ? args.staticCoeffriction : 0.5;
+}
+function Shape() {
+  this.id = uniqueID();
+}
+function Circle(args) {
+  Shape.call(this);
+  this.radius = args.radius !== undefined ? args.radius : 1;
+}
 Circle.prototype.getCentroid = function (rigidBody) {
   this.area = Math.PI * rigidBody.shape.radius * rigidBody.shape.radius;
 };
@@ -111,7 +104,7 @@ Circle.prototype.constructAABB = function (rigidBody) {
   let max = new Vector(rigidBody.kinematic.center.x + this.radius, rigidBody.kinematic.center.y + this.radius);
   this.aabb = new AABB(min, max);
 };
-Circle.prototype.draw = function (rigidBody, ctx, lineWidth = 2, style = '252,182,3') {
+Circle.prototype.draw = function (rigidBody, ctx, lineWidth = 2, style = '231,81,52') {
   ctx.beginPath();
   ctx.lineWidth = lineWidth;
   ctx.strokeStyle = 'rgb(' + style + ')';
@@ -124,6 +117,13 @@ Circle.prototype.draw = function (rigidBody, ctx, lineWidth = 2, style = '252,18
   ctx.closePath();
   ctx.stroke();
   //this.aabb.draw(this.id, ctx);
+};
+function Polygon(args) {
+  Shape.call(this);
+  this.vertices = args.vertices !== undefined ? args.vertices : [Vector.unitRandom(), Vector.unitRandom(), Vector.unitRandom()];
+
+  this.sortVertices();
+  this.calculateNormal();
 }
 Polygon.prototype.getCentroid = function (rigidBody) {
   let vertices = rigidBody.shape.vertices;
@@ -175,7 +175,7 @@ Polygon.prototype.sortVertices = function () {
     return Math.atan2(centerToFirst.y, centerToFirst.x) - Math.atan2(centerToSecond.y, centerToSecond.x);
   });
 };
-Polygon.prototype.draw = function (rigidBody, ctx, lineWidth = 2, style = '63, 156, 48') {
+Polygon.prototype.draw = function (rigidBody, ctx, lineWidth = 2, style = '53,98,129') {
   ctx.beginPath();
   ctx.lineWidth = lineWidth;
   ctx.strokeStyle = 'rgb(' + style + ')';
@@ -183,6 +183,17 @@ Polygon.prototype.draw = function (rigidBody, ctx, lineWidth = 2, style = '63, 1
   ctx.moveTo(this.vertices[this.vertices.length - 1].x, this.vertices[this.vertices.length - 1].y);
   for (let index = 0; index < this.vertices.length; index++) {
     ctx.lineTo(this.vertices[index].x, this.vertices[index].y);
+    //this.normals[index].scale(20).draw(ctx, this.vertices[index], "#155dd1");
+
+    /*
+    ctx.font = '20px serif';
+    ctx.save();
+    ctx.scale(1, -1);
+    ctx.translate(0, -canvas.height); 
+    ctx.fillStyle = "#155dd1";
+    ctx.fillText(index, this.vertices[index].x, canvas.height-this.vertices[index].y);
+    ctx.restore();
+    */
   }
   ctx.closePath();
   ctx.stroke();
@@ -276,39 +287,101 @@ Polygon.faceClipping = function (incidentPolygon, incidentContact, referencePoly
   let referenceNormal = [referencePolygon.shape.normals[referenceContact.position[0]],
   referencePolygon.shape.normals[referenceContact.position[1]],
   referencePolygon.shape.normals[referenceContact.position[2]]];
+  let penetration = [referenceContact.penetration[0], referenceContact.penetration[1]];
+  let normal = [referenceContact.normal, referenceContact.normal];
+  //incidentContact.normal.scale(20).draw(ctx, clippingPoint[1]);
   for (let i = 0; i < clippingPoint.length; i++) {
-    point = Polygon.lineClipping(clippingPoint[i], incidentContact.normal, referencePoint[0], referenceNormal[0]);
+    point = Polygon.lineClipping(clippingPoint[i], incidentContact.normal, referencePoint[0], referenceNormal[0], referenceNormal[1]);
     clippingPoint[i] = point[1];
+    
+    vertexNormal = referenceNormal[0].add(referenceNormal[1]);
+    if(!point[0] && vertexNormal.cross(incidentContact.normal) > 0){
+      normal[i] = referenceNormal[0];
+    }
+    /*
+    vertexToCenter = incidentPolygon.kinematic.center.subtract(referencePoint[1]);
+    if(vertexToCenter.cross(referenceNormal[0].add(referenceNormal[1])) > 0){
+      normal[i] = referenceNormal[0];
+    }*/
+    /*
+    if(!point[0] && 
+      vertexToCenter.dot(referenceNormal[0])
+    > vertexToCenter.dot(referenceNormal[1])){
+      normal[i] = referenceNormal[0];
+    }*/
+    /*
+    if(!point[0] && 
+      incidentContact.normal.dot(referenceNormal[0]) 
+    > incidentContact.normal.dot(referenceNormal[1])){
+      normal[i] = referenceNormal[0];
+    }*/
+    penetration[i] = point[2];
   }
   for (let i = 0; i < clippingPoint.length; i++) {
-    point = Polygon.lineClipping(clippingPoint[i], incidentContact.normal, referencePoint[2], referenceNormal[2]);
+    point = Polygon.lineClipping(clippingPoint[i], incidentContact.normal, referencePoint[2], referenceNormal[2],referenceNormal[1]);
     clippingPoint[i] = point[1];
+    
+    vertexNormal = referenceNormal[1].add(referenceNormal[2]);
+    if(!point[0] && vertexNormal.cross(incidentContact.normal) < 0){
+      normal[i] = referenceNormal[0];
+    }
+    /*
+    vertexToCenter = incidentPolygon.kinematic.center.subtract(referencePoint[2]);
+    if(vertexToCenter.cross(referenceNormal[1].add(referenceNormal[2])) < 0){
+      normal[i] = referenceNormal[2];
+    }
+    vertexToCenter.draw(ctx, referencePoint[2]);
+    referenceNormal[1].add(referenceNormal[2]).scale(20).draw(ctx, referencePoint[2]);
+    */
+    /*
+    if(!point[0] && 
+      vertexToCenter.dot(referenceNormal[2])
+    > vertexToCenter.dot(referenceNormal[1])){
+      normal[i] = referenceNormal[2];
+    }*/
+    /*
+    if(!point[0] && 
+      incidentContact.normal.dot(referenceNormal[2])
+    > incidentContact.normal.dot(referenceNormal[1])){
+      normal[i] = referenceNormal[2];
+    }*/
+    penetration[i] = point[2];
   }
   //Delete all out of bound point
   for (let i = clippingPoint.length - 1; i >= 0; i--) {
-    point = Polygon.lineClipping(clippingPoint[i], incidentContact.normal, referencePoint[1], referenceNormal[1]);
-    if (point[0]) clippingPoint[i] = point[1];
-    else clippingPoint.splice(i, 1);
+    point = Polygon.lineClipping(clippingPoint[i], incidentContact.normal, referencePoint[1], referenceNormal[1],referenceNormal[1]);
+    if (point[0]){
+      clippingPoint[i] = point[1];
+      penetration[i] = point[2];
+    }
+    else{
+      clippingPoint.splice(i, 1);
+      penetration.splice(i, 1);
+      normal.splice(i,1);
+    }
   }
-  return clippingPoint;
+  return new Contact(clippingPoint, normal, penetration);
 };
-Polygon.lineClipping = function (incidentPoint, incidentNormal, referencePoint, referenceNormal) {
+Polygon.lineClipping = function (incidentPoint, incidentNormal, referencePoint, referenceNormal, collisionNormal) {
   let pointToReference = incidentPoint.subtract(referencePoint);
-  if (referenceNormal.dot(pointToReference) < 0) return [true, incidentPoint];
+  if (referenceNormal.dot(pointToReference) < 0) return [true, incidentPoint, collisionNormal.dot(pointToReference)];
   let referenceTangent = referenceNormal.perpendicular();
   let incidentTangent = incidentNormal.perpendicular();
   let parameter = referenceTangent.cross(pointToReference) / incidentTangent.cross(referenceTangent);
-  return [false, incidentPoint.add(incidentTangent.scale(parameter))];
+  let croppedPoint = incidentPoint.add(incidentTangent.scale(parameter))
+  return [false, croppedPoint, collisionNormal.dot(croppedPoint.subtract(referencePoint))];
 };
 let materials = {
-  "wood": new Material({ density: 0.66, restitution: 0.5, kineticCoeffriction: 0.3, staticCoeffriction: 0.2 }),
-  "staticWood": new Material({ density: 0, restitution: 0.5, kineticCoeffriction: 0.3, staticCoeffriction: 0.2 }),
-  "steel": new Material({ density: 0.805, restitution: 0.56, kineticCoeffriction: 0.6, staticCoeffriction: 0.3 }),
-  "staticSteel": new Material({ density: 0, restitution: 0.56, kineticCoeffriction: 0.6, staticCoeffriction: 0.3 }),
-  "glass": new Material({ density: 0.25, restitution: 0.9, kineticCoeffriction: 0.9, staticCoeffriction: 0.4 }),
-  "staticGlass": new Material({ density: 0, restitution: 0.9, kineticCoeffriction: 0.9, staticCoeffriction: 0.4 }),
-  "ice": new Material({ density: 0.09, restitution: 0.88, kineticCoeffriction: 0.1, staticCoeffriction: 0.05 }),
-  "staticIce": new Material({ density: 0, restitution: 0.88, kineticCoeffriction: 0.1, staticCoeffriction: 0.05 })
+  "rubber": new Material({ density: 0.66, restitution: 1, kineticCoeffriction: 0.5, staticCoeffriction: 0.6 }),
+  "staticRubber": new Material({ density: 0, restitution: 1, kineticCoeffriction: 0.5, staticCoeffriction: 0.6}),
+  "wood": new Material({ density: 0.66, restitution: 0.4, kineticCoeffriction: 0.3, staticCoeffriction: 0.45 }),
+  "staticWood": new Material({ density: 0, restitution: 0.4, kineticCoeffriction: 0.3, staticCoeffriction: 0.45 }),
+  "steel": new Material({ density: 0.805, restitution: 0.56, kineticCoeffriction: 0.15, staticCoeffriction: 0.3 }),
+  "staticSteel": new Material({ density: 0, restitution: 0.56, kineticCoeffriction: 0.15, staticCoeffriction: 0.3 }),
+  "glass": new Material({ density: 0.25, restitution: 0.8, kineticCoeffriction: 0.2, staticCoeffriction: 0.5 }),
+  "staticGlass": new Material({ density: 0, restitution: 0.8, kineticCoeffriction: 0.2, staticCoeffriction: 0.5 }),
+  "ice": new Material({ density: 0.09, restitution: 0.88, kineticCoeffriction: 0.05, staticCoeffriction: 0.1 }),
+  "staticIce": new Material({ density: 0, restitution: 0.88, kineticCoeffriction: 0.05, staticCoeffriction: 0.1 })
 };
 let uniqueID = (function () {
   let id = 0;

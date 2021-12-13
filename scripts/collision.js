@@ -13,14 +13,20 @@ function Manifold(contacts = [], count = 0,
 Manifold.prototype.intersect = function(){
   if(this.object1.shape instanceof Polygon && this.object2.shape instanceof Polygon){
     contactOne = Polygon.getAxisOfLeastPenetration(this.object1, this.object2);
-    if(contactOne.penetration > 0) return false;
+    if(contactOne.penetration[0] > 0) return false;
+    //(new Point(this.object1.shape.vertices[contactOne.position[1]])).draw(ctx);
     contactTwo = Polygon.getAxisOfLeastPenetration(this.object2, this.object1);
-    if(contactTwo.penetration > 0) return false;
-    
-    clippedPoint = Polygon.faceClipping(this.object2, contactTwo, this.object1, contactOne);
+    if(contactTwo.penetration[0] > 0) return false;
+
+    clippedContact = Polygon.faceClipping(this.object2, contactTwo, this.object1, contactOne);
+    clippedPoint = clippedContact.position;
+    normal = clippedContact.normal;
+    penetration = clippedContact.penetration;
     this.count = clippedPoint.length;
     for(let i = 0; i < this.count; i++){
-      this.contacts[i] = new Contact(clippedPoint[i], contactOne.normal, Math.abs(contactOne.penetration[i]));
+      this.contacts[i] = new Contact(clippedPoint[i], normal[i], Math.abs(penetration[i]));
+      //(new Point(clippedPoint[i])).draw(ctx);
+      //normal[i].scale(20).draw(ctx, clippedPoint[i], "#4287f5")
     }
     return true;
   }
@@ -154,7 +160,7 @@ Manifold.prototype.resolve = function(){
     let massDenominator = getMassDenominator(this.object1, this.object2, this.contacts[index].position, this.contacts[index].normal);
 
     let restitution = Math.min(this.object1.material.restitution, this.object2.material.restitution);
-    let impulseNormal = -(1 + restitution) * velocityinNormal / (massDenominator);
+    let impulseNormal = Math.max(-(1 + restitution) * velocityinNormal / (massDenominator),0);
     let collisionImpulse = this.contacts[index].normal.scale(impulseNormal);
 
     this.object1.kinematic.applyImpulse(collisionImpulse.negate(), firstCenterToContact);
@@ -199,7 +205,8 @@ Manifold.prototype.resolve = function(){
 Manifold.prototype.correctPosition = function(){
   if(this.count == 0) return false;
   if(this.object1.kinematic.massInverse == 0 && this.object2.kinematic.massInverse == 0) return false;
-  index = 0;
+  //index = 0;
+  for(let index = 0; index < this.count; index++){
     const penetrationAllowance = 0.01;
     const correctionPercentage = 0.3;
     //Limit correction to be greater than certain point so no flickering
@@ -213,9 +220,11 @@ Manifold.prototype.correctPosition = function(){
     //Scale by mass so object with lower mass move more
     let firstCenterToContact = this.contacts[index].position.subtract(this.object1.kinematic.center);
     let secondCenterToContact = this.contacts[index].position.subtract(this.object2.kinematic.center);
+    this.object1.kinematic.applyImpulse(correction.negate(), firstCenterToContact);
+    this.object2.kinematic.applyImpulse(correction, secondCenterToContact);
     this.object1.kinematic.applyCorrection(this.object1, correction.negate(), firstCenterToContact);
     this.object2.kinematic.applyCorrection(this.object2, correction, secondCenterToContact);
-  
+  }
 };
 function getMassDenominator(object1, object2, contact, vector){
   let massInverse = object1.kinematic.massInverse + object2.kinematic.massInverse;
@@ -238,4 +247,4 @@ function getRelativeVelocity(rigidBody1, firstCenterToContact,rigidBody2, second
 }
 Math.clamp = function(min, max, value){
   return Math.min(Math.max(value, min), max);
-}
+};

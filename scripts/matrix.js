@@ -12,7 +12,7 @@ Matrix.prototype.extractInfo = function(){
 };
 Matrix.prototype.clone = function(){
   return new Matrix(this.xRow, this.yRow);
-}
+};
 Matrix.prototype.add = function(other){
   return new Matrix(this.xRow.add(other.xRow), 
                     this.yRow.add(other.yRow));
@@ -44,7 +44,7 @@ Matrix.rotation = function(angle){
   rotation = new Matrix(new Vector(cos, -sin), 
                         new Vector(sin,  cos));
   return rotation;
-}
+};
 Vector.prototype.rotate = function(angle){
   return (Matrix.rotation(angle)).multiplyVector(this);
-}
+};

@@ -30,4 +30,4 @@ AABB.prototype.intersect = function(other){
 };
 AABB.prototype.getDimension = function(){
   return this.max.subtract(this.min);
-}
+};
