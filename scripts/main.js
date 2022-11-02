@@ -20,6 +20,8 @@ function setup(){
   //sceneFive(); //Restitution with non-static object -- Not accurate
   //sceneSix(); //Sliding friction
   //sceneSeven(); //Rolling friction with/without skidding
+  //sceneEight(); //Rotative Bouncing
+  //sceneNine(); //Stacking block -- Failed
 
   setInterval(simulate, 1000/fps);
 }
@@ -42,7 +44,7 @@ function sceneOne(){
                                                               new Vector(0, 10),
                                                               new Vector(canvas.width, -100),
                                                               new Vector(canvas.width, 10)]}), 
-                              material : materials.staticRubber
+                              material : materials.staticSteel
               }));//Bottom Wall
   objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(0, canvas.height + 100),
                                                               new Vector(0, canvas.height - 10),
@@ -156,14 +158,20 @@ function sceneThree(){
     }
   }
   objects.push(new RigidBody({shape : new Circle({radius : 50}), 
-                              kinematic : new Kinematic({center : new Vector(502,300)}),
+                              kinematic : new Kinematic({center : new Vector(402,170)}),
                               material : materials.ice
               }));
-  objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(390,20),
-                                                              new Vector(550, 20),
-                                                              new Vector(400, 80),
-                                                              new Vector(560, 100)]}), 
+  objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(380,20),
+                                                              new Vector(535, 20),
+                                                              new Vector(390, 70),
+                                                              new Vector(550, 100)]}), 
                               material : materials.ice
+              }));
+  objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(20, 820),
+                                                              new Vector(40, 820),
+                                                              new Vector(40, 840),
+                                                              new Vector(20, 840)]}), 
+                              material : new Material({density: 1})
               }));
 }
 function sceneFour(){
@@ -247,9 +255,79 @@ function sceneSeven(){
               }));
   }
 }
+function sceneEight(){
+  objects = [];
+  manifolds = [];
+  let width = canvas.width/3;
+  let wallWidth = 20;
+  for(let i = 0; i < 3; i++){
+    objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(width*i, 0),
+                                                              new Vector(width*i + wallWidth, 0),
+                                                              new Vector(width*i, canvas.height),
+                                                              new Vector(width*i + wallWidth, canvas.height)]}), 
+                              material : materials.staticWood
+              }));//Left Wall
+    objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(width*(i+1), 0),
+                                                              new Vector(width*(i+1)-wallWidth, 0),
+                                                              new Vector(width*(i+1)-wallWidth, canvas.height),
+                                                              new Vector(width*(i+1), canvas.height)]}), 
+                              material : materials.staticWood
+              }));//Right Wall    
+    objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(width*i, canvas.height - wallWidth),
+                                                              new Vector(width*(i+1), canvas.height - wallWidth),
+                                                              new Vector(width*i, canvas.height),
+                                                              new Vector(width*(i+1), canvas.height)]}), 
+                              material : materials.staticWood
+              }));//Top wall
+    objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(width*i, 0),
+                                                              new Vector(width*(i+1), 0),
+                                                              new Vector(width*i, wallWidth),
+                                                              new Vector(width*(i+1), wallWidth)]}), 
+                              material : materials.staticRubber
+              }));//Left Wall
+    objects.push(new RigidBody({shape : new Circle({radius : wallWidth/2}), 
+                                kinematic : new Kinematic({center : new Vector(width*i+wallWidth*2, canvas.height/2), velocity: new Vector(10, 0), angularVelocity: (i-1)*5}),
+                                material : new Material({restitution: 0.8, kineticCoeffriction: 0.2, staticCoeffriction:0.3})
+              }));
+  }
+}
+function sceneNine(){
+  objects = [];
+  manifolds = [];
+  objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(-100, 0),
+                                                              new Vector(20, 0),
+                                                              new Vector(20, canvas.height),
+                                                              new Vector(-100, canvas.height)]}), 
+                              material : materials.staticRubber
+              }));//Left Wall
+  objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(canvas.width - 20, 0),
+                                                              new Vector(canvas.width+100, 0),
+                                                              new Vector(canvas.width+100, canvas.height),
+                                                              new Vector(canvas.width - 20, canvas.height)]}), 
+                              material : materials.staticRubber
+              }));//Right Wall
+  objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(0,-100),
+                                                              new Vector(0, 10),
+                                                              new Vector(canvas.width, -100),
+                                                              new Vector(canvas.width, 10)]}), 
+                              material : materials.staticWood
+              }));//Bottom Wall  
+  let width = 40;
+  let height = 40;
+  for(let i = 0; i < 10; i++){
+    for(let j = 0; j < 10; j++){
+      objects.push(new RigidBody({shape: new Polygon({vertices : [new Vector(50+width*j, height*i+20),
+                                                              new Vector(50+width*(j+1), height*i+20),
+                                                              new Vector(50+width*(j+1), height*(i+1)+20),
+                                                              new Vector(50+width*j, height*(i+1)+20)]}), 
+                              material : materials.wood
+              }));  
+    }
+  }
+} 
 
-let fps = 60;
-let speed = 3;
+let fps = 120;
+let speed = 5;
 let dt = speed/fps;
 function simulate(){
   render();

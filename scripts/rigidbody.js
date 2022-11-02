@@ -85,7 +85,7 @@ Kinematic.prototype.applyCorrection = function (rigidBody, correction, centerToC
 };
 function Material(args) {
   this.density = args.density !== undefined ? args.density : 0.5; // g/cm^3
-  this.restitution = args.restitution !== undefined ? Math.sqrt(args.restitution) : 1;
+  this.restitution = args.restitution !== undefined ? args.restitution : 1;
   this.kineticCoeffriction = args.kineticCoeffriction !== undefined ? args.kineticCoeffriction : 0.2;
   this.staticCoeffriction = args.staticCoeffriction !== undefined ? args.staticCoeffriction : 0.5;
 }
@@ -323,7 +323,7 @@ Polygon.faceClipping = function (incidentPolygon, incidentContact, referencePoly
     
     vertexNormal = referenceNormal[1].add(referenceNormal[2]);
     if(!point[0] && vertexNormal.cross(incidentContact.normal) < 0){
-      normal[i] = referenceNormal[0];
+      normal[i] = referenceNormal[2];
     }
     /*
     vertexToCenter = incidentPolygon.kinematic.center.subtract(referencePoint[2]);

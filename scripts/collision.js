@@ -220,10 +220,11 @@ Manifold.prototype.correctPosition = function(){
     //Scale by mass so object with lower mass move more
     let firstCenterToContact = this.contacts[index].position.subtract(this.object1.kinematic.center);
     let secondCenterToContact = this.contacts[index].position.subtract(this.object2.kinematic.center);
-    this.object1.kinematic.applyImpulse(correction.negate(), firstCenterToContact);
-    this.object2.kinematic.applyImpulse(correction, secondCenterToContact);
+    this.object1.kinematic.applyImpulse(correction.scale(dt), firstCenterToContact);
+    this.object2.kinematic.applyImpulse(correction.negate().scale(dt), secondCenterToContact);
     this.object1.kinematic.applyCorrection(this.object1, correction.negate(), firstCenterToContact);
     this.object2.kinematic.applyCorrection(this.object2, correction, secondCenterToContact);
+    
   }
 };
 function getMassDenominator(object1, object2, contact, vector){
